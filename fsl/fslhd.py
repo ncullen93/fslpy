@@ -44,6 +44,7 @@ def get_fsloutput():
         config.set_fsloutput(fslout)
     return fslout
 
+
 def get_fsl(add_bin=True):
     """
     #' @name get.fsl
@@ -106,6 +107,7 @@ def get_fsl(add_bin=True):
     if cmd is None:
         cmd = ''
     return cmd
+
 
 def checkimg(img, **kwargs):
     if ('nibabel' in str(type(img))) or ('Nifti1' in str(type(img))) or ('Nifti2' in str(type(img))):
