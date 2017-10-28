@@ -198,7 +198,8 @@ def system_cmd(cmd):
     Runs a bash system command and gives back return code and std out
     """
     retval = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE)
-    return retval.returncode, retval.stdout
+    stdout = retval.stdout.decode('unicode_escape')
+    return retval.returncode, stdout
 
 
 def have_fsl():
@@ -266,12 +267,19 @@ def fslstats(file, opts=None, verbose=False, ts=False, **kwargs):
     if verbose:
         print(cmd)
 
-    retval, statsval = system_cmd(cmd)
+    retval, stdout = system_cmd(cmd)
+
+    stdout = stdout.replace('\n',' ').strip(' ')
 
     if needs_removing:
         remove_tempfile(file)
 
-    return float(statsval)
+    try:
+        stdout = float(stdout)
+    except:
+        pass
+
+    return stdout
 
 
 def fslstats_help():
@@ -340,26 +348,26 @@ def fslbet(infile, outfile=None, retimg=True, reorient=False, opts='', betcmd=('
 
     Arguments
     ---------
-    infile : (character)
+    infile : string
         input filename
     
-    outfile : (character)
+    outfile : string
         output filename
     
-    retimg : (logical)
+    retimg : boolean
         return a loaded image object 
         (either from ants or nibabel, depending on config settings)
     
-    reorient : (logical)
+    reorient : boolean
         If retimg, should file be reoriented when read in
     
-    opts : (character)
+    opts : string
         additional options to \code{bet}
     
-    betcmd : (character)
+    betcmd : string
         Use \code{bet} or \code{bet2} function
     
-    verbose : (logical)
+    verbose : boolean
         print out command before running 
     
     kwargs : additional arguments passed to \code{\link{readimg}}.
@@ -406,7 +414,7 @@ def fslbet_help(betcmd=('bet2', 'bet')):
     """
     #' @title Help for FSL BET
     #' @description This function calls \code{bet}'s help
-    #' @param betcmd (character) Get help for \code{bet} or \code{bet2} function
+    #' @param betcmd string Get help for \code{bet} or \code{bet2} function
     #' @return Prints help output and returns output as character vector
     #' @export
     #' @examples
@@ -423,4 +431,108 @@ def fslbet_help(betcmd=('bet2', 'bet')):
         betcmd = betcmd[0]
 
     return fslhelp(betcmd)
+
+
+def fslcog(img, mm=True, verbose=False, ts=False):
+    """
+    Image Center of Gravity (FSL)
+    
+    Find Center of Gravity of Image from FSL
+    
+    Arguments
+    ---------
+    img : string | nibabel image | ants image
+        image on which CoG will be calculated
+    
+    mm : boolean
+        if the center of gravity (COG) would be in mm (True) or voxels (False)
+    
+    verbose : boolean
+         print out command before running 
+
+    ts : boolean
+         is the series a timeseries (4D), invoking \code{-t} 
+
+    Returns
+    -------
+    list of length 3 unless `ts==True`
+
+    Example
+    -------
+    >>> import fsl
+    >>> cog = fslcog('~/desktop/img.nii.gz')
+    """
+    opts = '-c' if mm else '-C'
+    cog = fslstats(img, opts=opts, verbose=verbose, ts=ts)
+    cog = cog.split(' ')
+
+    if len(cog) == 1:
+        cog = float(cog[0])
+    else:
+        cog = [float(c) for c in cog]
+
+    return cog
+
+
+def fslorient(file, retimg=True, reorient=False, opts='', verbose=False, **kwargs):
+    """
+    FSL Orient
+
+    Arguments
+    ---------
+    file : string | ants image | nibabel image
+        image to be manipulated
+    
+    retimg : boolean 
+        return image of class nifti
+    
+    reorient : boolean 
+        If \code{retimg}, should file be reoriented when read in?
+    
+    opts : string 
+        operations to be passed to \code{fslorient}
+    
+    verbose : boolean 
+        print out command before running
+    
+    kwargs : additional arguments 
+        passed to \code{\link{readimg}}.
+    
+    Returns
+    -------
+    exit code from system call | ants image | nibabel image
+    
+    Example
+    -------
+    >>> import fsl
+    >>> fsl.fslorient('~/desktop/img.nii.gz', retimg=False)
+    """
+    if ('-get' in opts) and retimg:
+        print('fslorient option was a -get, ',
+              'image was not changed - output not returned,',
+              ' and retimg set to False')
+        retimg = False
+
+    cmd = get_fsl()
+    file, fileremove = checkimg(file, **kwargs)
+    cmd = '%sfslorient %s "%s"' % (cmd, opts, file)
+    outfile = file.split('.')[0]
+    ext = get_imgext()
+    outfile = '%s%s' % (outfile, ext)
+
+    if verbose:
+        print(cmd, '\n')
+
+    retval, stdout = system_cmd(cmd)
+
+    if retimg:
+        img = readimg(outfile, **kwargs)
+        return img
+    else:
+        return retval
+
+
+def fslorient_help():
+    return fslhelp('fslorient')
+
 
