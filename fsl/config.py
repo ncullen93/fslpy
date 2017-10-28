@@ -4,8 +4,6 @@ Configuration file for FSL
 __all__ = ['set_fslpath', 
            'set_fsloutput',
            'set_fslpre',
-           'get_fslpath', 
-           'get_fsloutput',
            'get_fslpre']
 
 
@@ -25,10 +23,6 @@ def get_fslpath():
 def set_fsloutput(output):
     global FSL_OUTPUTTYPE
     FSL_OUTPUTTYPE = output
-
-def get_fsloutput(output):
-    global FSL_OUTPUTTYPE
-    return FSL_OUTPUTTYPE
 
 def set_fslpre(pre):
     global FSL_PRE
