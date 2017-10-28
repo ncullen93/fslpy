@@ -45,6 +45,14 @@ def get_fsloutput():
     return fslout
 
 
+def get_fsldir():
+    fsldir = os.getenv('FSLDIR')
+    if fsldir is None:
+        #x = get_fsl()
+        fsldir = config.FSL_PATH
+    return fsldir
+
+
 def get_fsl(add_bin=True):
     """
     #' @name get.fsl
@@ -107,6 +115,23 @@ def get_fsl(add_bin=True):
     if cmd is None:
         cmd = ''
     return cmd
+
+
+def get_imgext():
+    """
+    #' @title Determine extension of image based on FSLOUTPUTTYPE
+    #' @description Runs \code{get.fsloutput()} to extract FSLOUTPUTTYPE and then 
+    #' gets corresponding extension (such as .nii.gz)
+    #' @return Extension for output type
+    """
+    fslout = get_fsloutput()
+    ext_dict = {'NIFTI_PAIR'    : '.hdr', 
+                'NIFTI_GZ'      : '.nii.gz', 
+                'ANALYZE'       : '.hdr', 
+                'ANALYZE_GZ'    : '.hdr.gz',
+                'NIFTI'         : '.nii',
+                'NIFTI_PAIR_GZ' :  '.hdr.gz'}
+    return ext_dict[fslout]
 
 
 def checkimg(img, **kwargs):
@@ -208,4 +233,65 @@ def fslstats(file, opts=None, verbose=False, ts=False, **kwargs):
         remove_tempfile(file)
 
     return float(statsval)
+
+
+def fslstats_help():
+    """
+    #' @title FSL Stats Help
+    #' @description This function calls \code{fslstats}'s help
+    #' @return Prints help output and returns output as character vector
+    #' @aliases fslrange.help fslmean.help fslentropy.help fslsd.help
+    #' @export
+    #' @examples
+    #' if (have.fsl()){
+    #'  fslstats.help() 
+    #' }
+    fslstats.help = function(){
+      return(fslhelp("fslstats"))
+    }
+
+    Example
+    -------
+    >>> import fsl
+    >>> fsl.fslstats_help()
+    """
+    return fslhelp('fslstats')
+
+
+def fslhelp(func_name, help_arg='--help', extra_args='', return_string=False):
+    """
+    #' @title Wrapper for getting fsl help
+    #' @description This function takes in the function and returns the
+    #' help from FSL for that function
+    #' @param func_name FSL function name
+    #' @param help.arg Argument to print help, usually "--help" 
+    #' @param extra.args Extra arguments to be passed other than 
+    #' \code{--help}
+    #' @return Prints help output and returns output as character vector
+    #' @export
+    fslhelp = function(func_name, help.arg = "--help", extra.args = ""){
+      cmd = get.fsl()
+      cmd <- paste0(cmd, sprintf('%s %s %s', func_name, 
+                                 help.arg, extra.args))
+      #     args = paste(help.arg, extra.args, sep=" ", collapse = " ")
+      suppressWarnings({res = system(cmd, intern = TRUE)})
+      #     res = system2(func_name, args = args, stdout=TRUE, stderr=TRUE)
+      message(res, sep = "\n")
+      return(invisible(res))
+    }
+    """
+    cmd = get_fsl()
+    cmd = '%s%s %s %s' % \
+          (cmd, func_name, help_arg, extra_args)
+    retval, stdout = system_cmd(cmd)
+
+    helpstring = stdout.decode('unicode_escape') 
+    if return_string:
+        return helpstring
+    else:
+        print(helpstring)
+
+
+
+
 
