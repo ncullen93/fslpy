@@ -150,6 +150,45 @@ def checkimg(img, **kwargs):
         return img, False
 
 
+def check_outfile(outfile, retimg, fileext='.nii.gz'):
+    """
+    This function checks if an output filename is not None in conjunction 
+    whether the user would like to return an image
+
+    Arguments
+    ---------
+    outfile : string
+        output filename or None
+    retimg : boolean
+        Should an image be returned
+    fileext : string
+        the file extension
+    """
+    if retimg:
+        if outfile is None:
+            outfile = mktemp(suffix=fileext)
+    else:
+        if outfile is None:
+            raise ValueError('Outfile is None, and retimg=False, one of these must be changed')
+
+    return os.path.expanduser(outfile)
+
+
+def readimg(filename, **kwargs):
+    pypack = config.get_pypackage()
+    if pypack == 'ants':
+        import ants
+        img = ants.image_read(filename, **kwargs)
+    elif pypack == 'nibabel':
+        import nibabel
+        img = nibabel.load(filename, **kwargs)
+    else:
+        config.set_pypackage('nibabel')
+        import nibabel
+        img = nibabel.load(filename, **kwargs)
+    return img
+
+
 def remove_tempfile(file):
     os.remove(file)
 
@@ -292,6 +331,96 @@ def fslhelp(func_name, help_arg='--help', extra_args='', return_string=False):
         print(helpstring)
 
 
+def fslbet(infile, outfile=None, retimg=True, reorient=False, opts='', betcmd=('bet2', 'bet'), verbose=False, **kwargs):
+    """
+    Use FSL's Brain Extraction Tool (BET)
+    
+    This function calls \code{bet} to extract a brain from an image, 
+    usually for skull stripping.
+
+    Arguments
+    ---------
+    infile : (character)
+        input filename
+    
+    outfile : (character)
+        output filename
+    
+    retimg : (logical)
+        return a loaded image object 
+        (either from ants or nibabel, depending on config settings)
+    
+    reorient : (logical)
+        If retimg, should file be reoriented when read in
+    
+    opts : (character)
+        additional options to \code{bet}
+    
+    betcmd : (character)
+        Use \code{bet} or \code{bet2} function
+    
+    verbose : (logical)
+        print out command before running 
+    
+    kwargs : additional arguments passed to \code{\link{readimg}}.
+    
+    Returns
+    -------
+    string or image object
+
+    Example
+    -------
+    >>> import fsl
+    >>> infile = '/users/ncullen/desktop/img.nii.gz'
+    >>> outfile = '/users/ncullen/desktop/img_bet.nii.gz'
+    >>> fsl.fslbet(infile, outfile, retimg=False)
+    """
+    if isinstance(betcmd, tuple):
+        betcmd = betcmd[0]
+
+    cmd = get_fsl()
+    outfile = check_outfile(outfile=outfile, retimg=retimg, fileext='')
+    infile, inremove = checkimg(infile, **kwargs)
+    outfile, outremove = checkimg(outfile, **kwargs)
+
+    cmd = '%s%s "%s" "%s" %s' % (cmd, betcmd, infile, outfile, opts)
+
+    if verbose:
+        print(cmd, '\n')
+
+    retval, stdout = system_cmd(cmd)
+    ext = get_imgext()
+    outfile = '%s%s' % (outfile, ext)
+    
+    if retimg:
+        img = readimg(outfile, reorient=reorient, **kwargs)
+        if inremove: remove_tempfile(infile)
+        if outremove: remove_tempfile(outfile)
+        return img
+    else:
+        if inremove: remove_tempfile(infile)
+        return retval
 
 
+def fslbet_help(betcmd=('bet2', 'bet')):
+    """
+    #' @title Help for FSL BET
+    #' @description This function calls \code{bet}'s help
+    #' @param betcmd (character) Get help for \code{bet} or \code{bet2} function
+    #' @return Prints help output and returns output as character vector
+    #' @export
+    #' @examples
+    #' if (have.fsl()){
+    #'  fslbet.help()
+    #'  fslbet.help("bet")
+    #' }  
+    fslbet.help = function(betcmd = c("bet2", "bet")){
+      betcmd = match.arg( betcmd )
+      return(fslhelp(betcmd, help.arg = "-h"))
+    }
+    """
+    if isinstance(betcmd, tuple):
+        betcmd = betcmd[0]
+
+    return fslhelp(betcmd)
 

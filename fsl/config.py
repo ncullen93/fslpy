@@ -10,7 +10,7 @@ __all__ = ['set_fslpath',
 FSL_PATH = None
 FSL_OUTPUTTYPE = None
 FSL_PRE = None
-
+PYPACKAGE = 'nibabel'
 
 def set_fslpath(path):
     global FSL_PATH 
@@ -31,3 +31,17 @@ def set_fslpre(pre):
 def get_fslpre(pre):
     global FSL_PRE
     return FSL_PRE
+
+
+def set_pypackage(p):
+    p = p.lower()
+    if p not in {'ants', 'antspy' 'nibabel'}:
+        raise ValueError('pypackage must be ants or nibabel')
+    if p == 'antspy':
+        p = 'ants'
+    global PYPACKAGE
+    PYPACKAGE = p
+
+def get_pypackage():
+    global PYPACKAGE
+    return PYPACKAGE
