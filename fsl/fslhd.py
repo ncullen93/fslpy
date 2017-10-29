@@ -616,7 +616,6 @@ def flirt(infile, reffile, omat=None, dof=6, outfile=None, retimg=True,
     else:
         if verbose and print_omat:
             print('Output matrix not specified, but stored temporarily at %s\n' % omat)
-
         return retval
 
 

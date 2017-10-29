@@ -5,8 +5,8 @@ __all__ = ['fsl_biascorrect']
 import os
 
 from .fslhd import (checkimg, check_outfile, 
-            get_fsl, get_imgext, readnii, 
-            remove_tempfile, system_cmd)
+                    get_fsl, get_imgext, readnii, 
+                    remove_tempfile, system_cmd)
 
 
 def fsl_biascorrect(file, outfile=None, retimg=True, reorient=False, 
