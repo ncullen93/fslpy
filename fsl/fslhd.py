@@ -174,7 +174,7 @@ def check_outfile(outfile, retimg, fileext='.nii.gz'):
     return os.path.expanduser(outfile)
 
 
-def readimg(filename, **kwargs):
+def readnii(filename, reorient=False, **kwargs):
     pypack = config.get_pypackage()
     if pypack == 'ants':
         import ants
@@ -370,7 +370,7 @@ def fslbet(infile, outfile=None, retimg=True, reorient=False, opts='', betcmd=('
     verbose : boolean
         print out command before running 
     
-    kwargs : additional arguments passed to \code{\link{readimg}}.
+    kwargs : additional arguments passed to \code{\link{readnii}}.
     
     Returns
     -------
@@ -401,7 +401,7 @@ def fslbet(infile, outfile=None, retimg=True, reorient=False, opts='', betcmd=('
     outfile = '%s%s' % (outfile, ext)
     
     if retimg:
-        img = readimg(outfile, reorient=reorient, **kwargs)
+        img = readnii(outfile, reorient=reorient, **kwargs)
         if inremove: remove_tempfile(infile)
         if outremove: remove_tempfile(outfile)
         return img
@@ -496,7 +496,7 @@ def fslorient(file, retimg=True, reorient=False, opts='', verbose=False, **kwarg
         print out command before running
     
     kwargs : additional arguments 
-        passed to \code{\link{readimg}}.
+        passed to \code{\link{readnii}}.
     
     Returns
     -------
@@ -526,7 +526,7 @@ def fslorient(file, retimg=True, reorient=False, opts='', verbose=False, **kwarg
     retval, stdout = system_cmd(cmd)
 
     if retimg:
-        img = readimg(outfile, **kwargs)
+        img = readnii(outfile, **kwargs)
         return img
     else:
         return retval
