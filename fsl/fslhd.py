@@ -472,7 +472,7 @@ def fslcog(img, mm=True, verbose=False, ts=False):
         cog = [float(c) for c in cog]
 
     return cog
-
+cog = fslcog
 
 def fslorient(file, retimg=True, reorient=False, opts='', verbose=False, **kwargs):
     """
@@ -534,5 +534,95 @@ def fslorient(file, retimg=True, reorient=False, opts='', verbose=False, **kwarg
 
 def fslorient_help():
     return fslhelp('fslorient')
+
+
+def flirt(infile, reffile, omat=None, dof=6, outfile=None, retimg=True,
+          reorient=False, opts='', verbose=False, **kwargs):
+    """
+    #' @title Register using FLIRT
+    #' @description This function calls \code{flirt} to register infile to reffile
+    #' and either saves the image or returns an object of class nifti, along with the
+    #' transformation matrix omat  
+    
+    infile : string 
+        input filename
+    
+    reffile : string 
+        reference image to be registered to
+    
+    omat : string 
+        Output matrix name
+    
+    dof : scalar 
+        degrees of freedom (default 6 - rigid body)
+    
+    outfile : string 
+        output filename
+    
+    retimg : boolean 
+        return image of class nifti
+    
+    reorient : boolean 
+        If retimg, should file be reoriented when read in?
+
+    opts : string 
+        additional options to FLIRT
+    
+    verbose : boolean 
+        print out command before running
+    
+    kwargs : additional  
+        rguments passed to \code{\link{readnii}}.
+
+    Returns
+    -------
+    exit code from system call | ants image | nibabel image
+
+    Example
+    -------
+    >>> import fsl
+    >>> fsl.flirt(infile='~/desktop/img.nii.gz', reffile='~/desktop/template.nii.gz', dof=6)
+    """
+    cmd = get_fsl()
+    outfile = check_outfile(outfile=outfile, retimg=retimg, fileext='')
+    infile, inremove = checkimg(infile, **kwargs)
+    reffile, refremove = checkimg(reffile, **kwargs)
+    outfile, outremove = checkimg(outfile, **kwargs)
+    outfile = outfile.split('.')[0]
+
+    print_omat = False
+    if omat is None:
+        omat = mktemp(suffix='.mat')
+        print_omat = True
+
+    omat = os.path.expanduser(omat)
+
+    cmd = '%sflirt -in "%s" -ref "%s" -out "%s" -dof %d -omat "%s" %s' % \
+          (cmd, infile, reffile, outfile, dof, omat, opts)
+
+    if verbose:
+        print(cmd, '\n')
+
+    retval, stdout = system_cmd(cmd)
+    ext = get_imgext()
+    outfile = '%s%s' % (outfile, ext)
+
+    if retimg:
+        img = readnii(outfile, reorient=reorient, **kwargs)
+        if inremove: remove_tempfile(infile)
+        if refremove: remove_tempfile(reffile)
+        if outremove: remove_tempfile(outremove)
+        return img
+    else:
+        if verbose and print_omat:
+            print('Output matrix not specified, but stored temporarily at %s\n' % omat)
+
+        return retval
+
+
+def flirt_help():
+    return fslhelp('flirt', help_arg='-help')
+
+
 
 
